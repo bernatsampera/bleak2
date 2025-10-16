@@ -1,0 +1,39 @@
+Objective: Implement Bleak again with my current knowledge. 
+
+Backend
+
+I need graph that based on a question it does more questions to understand better the request of the user.
+
+
+graph returns an array of questions. Every question has type (radio, input) and text_question
+
+
+It returns to the user the following REST Response.
+type Question
+  question: String
+  type: String
+
+type Response
+questions: Array<Question>
+
+
+
+Then Graph is resumed with the response of the user. 
+Type Answer
+  question: str
+  answer: str
+
+Then this is returned to the graph with Command to resume the graph.
+
+
+Frontend
+It receives the questions and based on the question type it shows an UI element or another.
+Then it sends again the response to the backend in the Answer format.
+
+
+
+Problem with this implementation?
+Types have to be the same for frontend and backend.
+How to match the tools with the chat.
+
+

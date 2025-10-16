@@ -1,0 +1,70 @@
+
+
+Rule 1
+Use always Command to connect one node to another.
+from langgraph.types import Command
+
+async def node1(state: State) -> Command[Literal["node2"]]
+  """ Explanation """
+
+  ... Logic ...
+
+  return Command(
+    goto="node2",
+    update={
+        "value_to_update": value,
+    }
+  )
+
+
+Rule 2
+If a state has messages use MessagesState
+from langgraph.graph.message import  MessagesState
+
+class State(MessagesState):
+  ... other fields if needed ...
+
+
+Rule 3
+The llm will always be initialized like this at the beginning
+from langchain.chat_models import init_chat_model
+llm = init_chat_model("google_genai:gemini-2.5-flash-lite")
+
+
+
+Rule 4 
+Create always an input state and a normal state if not all fields are necessary fot the input
+class InputState(MessagesState):
+  ... other fields if needed ...
+
+class State(InputState):
+  ... other fields if needed ...
+
+
+graph_builder = StateGraph(State, input=InputState)
+
+
+Rule 5
+When returning a json, use always with_structured_output:
+class Output(BaseModel):
+  field1: str
+structured_llm = llm.with_structured_output(Output)
+response = structured_llm.invoke(messages)
+response.field1
+
+
+Rule 6
+Human in the loop
+from langgraph.types import Command, interrupt
+
+human_response = interrupt({"query": query})
+
+
+Rule 7 
+Nodes that route to the end of the graph will have the literal "__end__" and the type END on the Command.
+
+from langgraph.graph import END
+
+async def node1(state: State) -> Command[Literal["__end__"]]
+  ... Logic ...
+  return Command(goto=END, update={...})

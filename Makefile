@@ -9,3 +9,8 @@ dev:
 
 test: 	
 	uv run pytest -v -s
+
+
+backend: 
+	@echo "Starting backend server on http://localhost:8004"
+	source .venv/bin/activate && uvicorn src.main:app --reload --port 8004
