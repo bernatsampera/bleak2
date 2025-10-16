@@ -50,7 +50,8 @@ class QuestionsOutput(BaseModel):
 
 # Initialize the LLM
 # llm = init_chat_model("google_genai:gemini-2.5-flash-lite")
-llm = init_chat_model("ollama:qwen3:14b")
+# llm = init_chat_model("ollama:qwen3:14b")
+llm = init_chat_model("ollama:gemma3:4b")
 
 
 async def generate_questions(state: State) -> Command[Literal["__end__"]]:
