@@ -2,6 +2,7 @@ from typing import List, Literal
 
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
+from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import MessagesState
 from langgraph.types import Command, interrupt
@@ -22,7 +23,6 @@ class State(InputState):
 
     questions: List[dict]  # Stores generated questions
     answers: List[dict]  # Stores user answers
-    needs_questions: bool  # Flag to indicate if more questions are needed
     completed: bool  # Flag to indicate if the process is complete
 
 
@@ -54,7 +54,9 @@ class QuestionsOutput(BaseModel):
 llm = init_chat_model("ollama:gemma3:4b")
 
 
-async def generate_questions(state: State) -> Command[Literal["__end__"]]:
+async def generate_questions(
+    state: State,
+) -> Command[Literal["__end__", "ask_user_input"]]:
     """Generate clarifying questions based on the user's initial request.
 
     This node analyzes the user's message and creates questions to better understand their needs.
@@ -64,7 +66,6 @@ async def generate_questions(state: State) -> Command[Literal["__end__"]]:
     # Get the last user message
     user_message = messages[-1].content if messages else ""
 
-    print(user_message)
     # Simple prompt to generate questions
     prompt = f"""
     Based on this user request: "{user_message}"
@@ -87,40 +88,53 @@ async def generate_questions(state: State) -> Command[Literal["__end__"]]:
 
     # Generate questions using structured output
     structured_llm = llm.with_structured_output(QuestionsOutput)
-    response = structured_llm.invoke([{"role": "user", "content": prompt}])
+    response = await structured_llm.ainvoke([{"role": "user", "content": prompt}])
 
     if not response.need_clarification:  # No questions needed, proceed to completion
         return Command(
             goto=END,
-            update={"questions": [], "needs_questions": False, "completed": True},
+            update={"questions": [], "completed": True},
         )
 
-    print(response)
     # need_clarification=True questions=[{'question': "What type of 'deep agent' are you referring to? For example, is it an AI model using deep learning techniques, a simulation, or another approach?", 'type': 'radio', 'options': ['AI model with deep learning', 'Simulation or virtual agent', 'Other (please specify)']}, {'question': 'What was the primary goal of your project? For example, did you aim to analyze historical data, reconstruct biographies, or identify patterns in historical events?', 'type': 'input'}]
     # Use interrupt to wait for human input - send all questions at once
-    human_answers = interrupt(
+    return Command(
+        goto="ask_user_input",
+        update={"questions": response.questions},
+    )
+
+
+async def ask_user_input(state: State) -> Command[Literal["__end__"]]:
+    questions = state.get("questions", [])
+    messages = state.get("messages", [])
+    answers = interrupt(
         {
             "query": "Please answer the following questions:",
-            "questions": response.questions,
+            "questions": questions,
         }
     )
 
-    # Store questions and answers received from human
-    answers = []
-    for i, question in enumerate(response.questions):
-        if i < len(human_answers):
-            answers.append(
-                {"question": question["question"], "answer": human_answers[i]}
-            )
+    prompt = f"""
+        Provide a complete answer to the user based on the original question and the user's answer.
+        
+        Messages:
+        {messages}
+        
+        Answers: 
+        {answers}
+    """
+
+    complete_response = await llm.ainvoke(prompt)
+
+    print("Complete Response: ", complete_response)
 
     # Proceed to process the answers (or complete if all done)
     return Command(
         goto=END,
         update={
-            "questions": response.questions,
-            "answers": answers,
-            "needs_questions": False,
             "completed": True,
+            "answers": answers,
+            "messages": complete_response.content,
         },
     )
 
@@ -128,7 +142,9 @@ async def generate_questions(state: State) -> Command[Literal["__end__"]]:
 # Build the graph
 graph_builder = StateGraph(State, input=InputState)
 graph_builder.add_node("generate_questions", generate_questions)
+graph_builder.add_node("ask_user_input", ask_user_input)
 
 graph_builder.add_edge(START, "generate_questions")
 
-graph = graph_builder.compile()
+checkpointer = MemorySaver()
+graph = graph_builder.compile(checkpointer=checkpointer)  ## use without langgraph stdio

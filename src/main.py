@@ -4,7 +4,10 @@ import warnings
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from langchain_core.messages import HumanMessage
+from langgraph.types import Command
 from pydantic import BaseModel
+from src.graph import Question, graph
 
 warnings.filterwarnings("ignore")
 os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
@@ -20,14 +23,25 @@ app.add_middleware(
 )
 
 
+class Question(BaseModel):
+    question: str
+    type: str
+
+
+class Answer(BaseModel):
+    question: str
+    answer: str
+
+
 class ChatRequest(BaseModel):
     message: str
-    conversation_id: str | None = None  # For future conversation tracking
+    answers: list[Answer] | None = []
+    thread_id: str | None = None  # For future conversation tracking
 
 
 class ChatResponse(BaseModel):
-    message: str
-    conversation_id: str
+    response: dict
+    thread_id: str
 
 
 @app.get("/health")
@@ -36,12 +50,35 @@ def health_check():
     return {"status": "healthy :)"}
 
 
+def extractInterruption(state: dict):
+    """Extract interruption value from LangGraph state."""
+    return state["__interrupt__"][0].value
+
+
+# config = create_graph_config(thread_id)
+# result: TranslateState = graph.invoke(input_data, config)
+# return result
+
+
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-    conversation_id = request.conversation_id or str(uuid.uuid4())
+    thread_id = request.thread_id or str(uuid.uuid4())
+    config = {"configurable": {"thread_id": thread_id}}
+
+    humanMessage = HumanMessage(content=request.message)
+    result = {}
+    print("request.answers", request.answers)
+    if len(request.answers) > 0:
+        input_data = {"answers": request.answers}
+        print("Resuming graph")
+        result = await graph.ainvoke(Command(resume=input_data), config)
+    else:
+        print("Starting graph")
+        result = await graph.ainvoke({"messages": [humanMessage]}, config)
+
     return {
-        "message": request.message,
-        "conversation_id": conversation_id,
+        "response": result,
+        "thread_id": thread_id,
     }
 
 
