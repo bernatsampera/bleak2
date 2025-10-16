@@ -23,7 +23,6 @@ class State(InputState):
 
     questions: List[dict]  # Stores generated questions
     answers: List[dict]  # Stores user answers
-    completed: bool  # Flag to indicate if the process is complete
 
 
 class Question(TypedDict):
@@ -93,7 +92,7 @@ async def generate_questions(
     if not response.need_clarification:  # No questions needed, proceed to completion
         return Command(
             goto=END,
-            update={"questions": [], "completed": True},
+            update={"questions": []},
         )
 
     # need_clarification=True questions=[{'question': "What type of 'deep agent' are you referring to? For example, is it an AI model using deep learning techniques, a simulation, or another approach?", 'type': 'radio', 'options': ['AI model with deep learning', 'Simulation or virtual agent', 'Other (please specify)']}, {'question': 'What was the primary goal of your project? For example, did you aim to analyze historical data, reconstruct biographies, or identify patterns in historical events?', 'type': 'input'}]
@@ -122,17 +121,16 @@ async def ask_user_input(state: State) -> Command[Literal["__end__"]]:
         
         Answers: 
         {answers}
+        
+        Return just a brief answer, no more questions.
     """
 
     complete_response = await llm.ainvoke(prompt)
-
-    print("Complete Response: ", complete_response)
 
     # Proceed to process the answers (or complete if all done)
     return Command(
         goto=END,
         update={
-            "completed": True,
             "answers": answers,
             "messages": complete_response.content,
         },

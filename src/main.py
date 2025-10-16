@@ -55,11 +55,6 @@ def extractInterruption(state: dict):
     return state["__interrupt__"][0].value
 
 
-# config = create_graph_config(thread_id)
-# result: TranslateState = graph.invoke(input_data, config)
-# return result
-
-
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
     thread_id = request.thread_id or str(uuid.uuid4())
@@ -67,7 +62,6 @@ async def chat(request: ChatRequest):
 
     humanMessage = HumanMessage(content=request.message)
     result = {}
-    print("request.answers", request.answers)
     if len(request.answers) > 0:
         input_data = {"answers": request.answers}
         print("Resuming graph")
