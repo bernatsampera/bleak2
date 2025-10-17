@@ -108,7 +108,6 @@ async def ask_user_input(state: State) -> Command[Literal["__end__"]]:
     messages = state.get("messages", [])
     answers = interrupt(
         {
-            "query": "Please answer the following questions:",
             "questions": questions,
         }
     )

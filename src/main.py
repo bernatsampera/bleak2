@@ -40,7 +40,8 @@ class ChatRequest(BaseModel):
 
 
 class ChatResponse(BaseModel):
-    response: dict
+    messages: list
+    questions: list[Question]
     thread_id: str
 
 
@@ -71,7 +72,8 @@ async def chat(request: ChatRequest):
         result = await graph.ainvoke({"messages": [humanMessage]}, config)
 
     return {
-        "response": result,
+        "messages": result["messages"],
+        "questions": result["questions"],
         "thread_id": thread_id,
     }
 
