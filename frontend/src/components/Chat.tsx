@@ -1,5 +1,6 @@
 import {Thread} from "@/components/assistant-ui/thread";
 import {ThreadList} from "@/components/assistant-ui/thread-list";
+import {useThread} from "@/contexts/ThreadContext";
 import {
   AssistantRuntimeProvider,
   useLocalRuntime,
@@ -8,7 +9,9 @@ import {
 
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
-const createModelAdapter = (): ChatModelAdapter => ({
+const createModelAdapter = (
+  setThreadId: (threadId: string | null) => void
+): ChatModelAdapter => ({
   async run({messages, abortSignal}) {
     try {
       const result = await fetch(`${BACKEND_URL}/chat`, {
@@ -29,12 +32,23 @@ const createModelAdapter = (): ChatModelAdapter => ({
       }
 
       const data = await result.json();
+      if (data.thread_id) {
+        // Save thread ID to context
+        setThreadId(data.thread_id);
+      }
+
+      console.log(data);
+
+      if (data.questions) {
+        console.log(data);
+      }
 
       return {
         content: [
           {
             type: "text",
-            text: data.message || data.detail || "No message from the chat"
+            text: data.message || data.detail || "No message from the chat",
+            questions: data.questions
           }
         ]
       };
@@ -48,7 +62,8 @@ const createModelAdapter = (): ChatModelAdapter => ({
 });
 
 export default function Chat() {
-  const runtime = useLocalRuntime(createModelAdapter());
+  const {setThreadId} = useThread();
+  const runtime = useLocalRuntime(createModelAdapter(setThreadId));
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>

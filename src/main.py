@@ -23,18 +23,13 @@ app.add_middleware(
 )
 
 
-class Question(BaseModel):
-    question: str
-    type: str
-
-
 class Answer(BaseModel):
     question: str
     answer: str
 
 
 class ChatRequest(BaseModel):
-    message: str
+    message: str | None = None
     answers: list[Answer] | None = []
     thread_id: str | None = None  # For future conversation tracking
 
@@ -61,7 +56,6 @@ async def chat(request: ChatRequest):
     thread_id = request.thread_id or str(uuid.uuid4())
     config = {"configurable": {"thread_id": thread_id}}
 
-    humanMessage = HumanMessage(content=request.message)
     result = {}
     if len(request.answers) > 0:
         input_data = {"answers": request.answers}
@@ -69,6 +63,8 @@ async def chat(request: ChatRequest):
         result = await graph.ainvoke(Command(resume=input_data), config)
     else:
         print("Starting graph")
+        humanMessage = HumanMessage(content=request.message)
+
         result = await graph.ainvoke({"messages": [humanMessage]}, config)
 
     return {

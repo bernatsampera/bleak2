@@ -25,7 +25,7 @@ class State(InputState):
     answers: List[dict]  # Stores user answers
 
 
-class Question(TypedDict):
+class Question(BaseModel):
     """Represents a question to be asked to the user."""
 
     question: str
@@ -44,7 +44,7 @@ class QuestionsOutput(BaseModel):
     """Structured output for generated questions."""
 
     need_clarification: bool
-    questions: List[dict]
+    questions: List[Question]
 
 
 # Initialize the LLM
@@ -70,17 +70,24 @@ async def generate_questions(
     Based on this user request: "{user_message}"
 
     Generate 1-3 clarifying questions to better understand what the user wants.
-    
+
     Return the questions as an array of JSON objects.
     need_clarification: bool
     questions: [
-        {{"question": "question1", "type": "radio", "options":["option1", "option2"]}},
+        {{"question": "question1", "type": "radio", "options":["option1", "option2", "option3"]}},
         {{"question": "question2", "type": "input"}},
     ]
 
     Format your response as a JSON array of questions with:
     - "question": the question text
     - "type": either "radio" for multiple choice or "input" for open text
+    - "options": an array of options for radio questions. CRITICAL: Radio questions MUST have at least 2 options, preferably 3-5 options.
+    - For "input" type questions, the options array should be empty []
+
+    IMPORTANT:
+    - If you use "radio" type, you MUST provide a non-empty options array with at least 2 choices
+    - If you use "input" type, the options array should be empty []
+    - All radio questions must have meaningful, distinct options
 
     If the user's request is already clear enough, return an empty array [].
     """
@@ -89,13 +96,13 @@ async def generate_questions(
     structured_llm = llm.with_structured_output(QuestionsOutput)
     response = await structured_llm.ainvoke([{"role": "user", "content": prompt}])
 
+    print(response)
+
     if not response.need_clarification:  # No questions needed, proceed to completion
         return Command(
             goto=END,
             update={"questions": []},
         )
-
-    # need_clarification=True questions=[{'question': "What type of 'deep agent' are you referring to? For example, is it an AI model using deep learning techniques, a simulation, or another approach?", 'type': 'radio', 'options': ['AI model with deep learning', 'Simulation or virtual agent', 'Other (please specify)']}, {'question': 'What was the primary goal of your project? For example, did you aim to analyze historical data, reconstruct biographies, or identify patterns in historical events?', 'type': 'input'}]
     # Use interrupt to wait for human input - send all questions at once
     return Command(
         goto="ask_user_input",
