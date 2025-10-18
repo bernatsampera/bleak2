@@ -1,11 +1,11 @@
 import "./App.css";
-import Chat from "./components/Chat2";
+import Chat from "./components/Chat";
 import {ThreadProvider} from "./contexts/ThreadContext";
 
 function App() {
   return (
     <ThreadProvider>
-      <div className="bg-yellow-400">
+      <div className="h-dvh">
         <Chat />
       </div>
     </ThreadProvider>

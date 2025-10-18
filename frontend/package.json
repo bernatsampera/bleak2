@@ -25,7 +25,6 @@
     "ai": "^5.0.75",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "daisyui": "^5.3.7",
     "lucide-react": "^0.546.0",
     "motion": "^12.23.24",
     "react": "^19.1.1",
