@@ -1,7 +1,6 @@
-import {useState} from "react";
 import "./App.css";
-import Chat from "./components/Chat";
-import { ThreadProvider } from "./contexts/ThreadContext";
+import Chat from "./components/Chat2";
+import {ThreadProvider} from "./contexts/ThreadContext";
 
 function App() {
   return (

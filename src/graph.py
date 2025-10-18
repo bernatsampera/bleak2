@@ -28,6 +28,7 @@ class State(InputState):
 class Question(BaseModel):
     """Represents a question to be asked to the user."""
 
+    id: str  # Unique identifier for the question
     question: str
     type: str  # "radio" or "input"
     options: List[str]  # Only for radio questions
@@ -48,9 +49,9 @@ class QuestionsOutput(BaseModel):
 
 
 # Initialize the LLM
-# llm = init_chat_model("google_genai:gemini-2.5-flash-lite")
+llm = init_chat_model("google_genai:gemini-2.5-flash-lite")
 # llm = init_chat_model("ollama:qwen3:14b")
-llm = init_chat_model("ollama:gemma3:4b")
+# llm = init_chat_model("ollama:gemma3:4b")
 
 
 async def generate_questions(
@@ -74,11 +75,12 @@ async def generate_questions(
     Return the questions as an array of JSON objects.
     need_clarification: bool
     questions: [
-        {{"question": "question1", "type": "radio", "options":["option1", "option2", "option3"]}},
-        {{"question": "question2", "type": "input"}},
+        {{"id": "q1", "question": "question1", "type": "radio", "options":["option1", "option2", "option3"]}},
+        {{"id": "q2", "question": "question2", "type": "input"}},
     ]
 
     Format your response as a JSON array of questions with:
+    - "id": a unique identifier (like "q1", "q2", etc.)
     - "question": the question text
     - "type": either "radio" for multiple choice or "input" for open text
     - "options": an array of options for radio questions. CRITICAL: Radio questions MUST have at least 2 options, preferably 3-5 options.
@@ -88,6 +90,7 @@ async def generate_questions(
     - If you use "radio" type, you MUST provide a non-empty options array with at least 2 choices
     - If you use "input" type, the options array should be empty []
     - All radio questions must have meaningful, distinct options
+    - Each question MUST have a unique id
 
     If the user's request is already clear enough, return an empty array [].
     """
@@ -103,31 +106,41 @@ async def generate_questions(
             goto=END,
             update={"questions": []},
         )
+
+    answers = interrupt({"questions": response.questions})
+
+    print("answers", answers)
     # Use interrupt to wait for human input - send all questions at once
     return Command(
         goto="ask_user_input",
-        update={"questions": response.questions},
+        update={
+            "questions": response.questions,
+            "answers": answers,
+        },
     )
 
 
 async def ask_user_input(state: State) -> Command[Literal["__end__"]]:
     questions = state.get("questions", [])
     messages = state.get("messages", [])
-    answers = interrupt(
-        {
-            "questions": questions,
-        }
-    )
+    answers = state.get("answers", {})
+
+    # Format the answers for the prompt
+    formatted_answers = []
+    for question in questions:
+        question_id = question.id
+        answer_text = answers.get(question_id, "") if isinstance(answers, dict) else ""
+        formatted_answers.append({"question": question.question, "answer": answer_text})
 
     prompt = f"""
-        Provide a complete answer to the user based on the original question and the user's answer.
-        
-        Messages:
+        Provide a complete answer to the user based on the original question and the user's answers.
+
+        Original Messages:
         {messages}
-        
-        Answers: 
-        {answers}
-        
+
+        User Answers to Clarifying Questions:
+        {formatted_answers}
+
         Return just a brief answer, no more questions.
     """
 
@@ -137,8 +150,7 @@ async def ask_user_input(state: State) -> Command[Literal["__end__"]]:
     return Command(
         goto=END,
         update={
-            "answers": answers,
-            "messages": complete_response.content,
+            "messages": [complete_response.content],
         },
     )
 
@@ -151,4 +163,5 @@ graph_builder.add_node("ask_user_input", ask_user_input)
 graph_builder.add_edge(START, "generate_questions")
 
 checkpointer = MemorySaver()
-graph = graph_builder.compile(checkpointer=checkpointer)  ## use without langgraph stdio
+# graph = graph_builder.compile(checkpointer=checkpointer)  ## use without langgraph stdio
+graph = graph_builder.compile()

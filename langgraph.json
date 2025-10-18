@@ -1,7 +1,8 @@
 {
   "dockerfile_lines": [],
   "graphs": {
-    "graph": "./src/graph.py:graph"
+    "graph": "./src/graph.py:graph",
+    "hitltest": "./src/testhitlgraph.py:graph"
   },
   "python_version": "3.12",
   "env": ".env",

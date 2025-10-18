@@ -1,4 +1,12 @@
 import {
+  ActionBarPrimitive,
+  BranchPickerPrimitive,
+  ComposerPrimitive,
+  ErrorPrimitive,
+  MessagePrimitive,
+  ThreadPrimitive,
+} from "@assistant-ui/react";
+import {
   ArrowDownIcon,
   ArrowUpIcon,
   CheckIcon,
@@ -7,33 +15,23 @@ import {
   CopyIcon,
   PencilIcon,
   RefreshCwIcon,
-  Square
+  Square,
 } from "lucide-react";
-
-import {
-  ActionBarPrimitive,
-  BranchPickerPrimitive,
-  ComposerPrimitive,
-  ErrorPrimitive,
-  MessagePrimitive,
-  ThreadPrimitive
-} from "@assistant-ui/react";
-
-import {LazyMotion, MotionConfig, domAnimation} from "motion/react";
-import * as m from "motion/react-m";
-import type {FC} from "react";
+import type { FC } from "react";
 
 import {
   ComposerAddAttachment,
   ComposerAttachments,
-  UserMessageAttachments
+  UserMessageAttachments,
 } from "@/components/assistant-ui/attachment";
-import {ToolFallback} from "@/components/assistant-ui/tool-fallback";
-import {TooltipIconButton} from "@/components/assistant-ui/tooltip-icon-button";
-import {Button} from "@/components/ui/button";
-
-import {cn} from "@/lib/utils";
-import {UIDirector} from "./UIDirector";
+import { MarkdownText } from "@/components/assistant-ui/markdown-text";
+import { ToolFallback } from "@/components/assistant-ui/tool-fallback";
+import { TooltipIconButton } from "@/components/assistant-ui/tooltip-icon-button";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { LazyMotion, MotionConfig, domAnimation } from "motion/react";
+import * as m from "motion/react-m";
+import { InterruptUI } from "../InterruptUI";
 
 export const Thread: FC = () => {
   return (
@@ -42,26 +40,25 @@ export const Thread: FC = () => {
         <ThreadPrimitive.Root
           className="aui-root aui-thread-root @container flex h-full flex-col bg-background"
           style={{
-            ["--thread-max-width" as string]: "44rem"
+            ["--thread-max-width" as string]: "44rem",
           }}
         >
           <ThreadPrimitive.Viewport className="aui-thread-viewport relative flex flex-1 flex-col overflow-x-auto overflow-y-scroll px-4">
-            <ThreadPrimitive.If empty>
-              <ThreadWelcome />
-            </ThreadPrimitive.If>
+            <ThreadWelcome />
 
             <ThreadPrimitive.Messages
               components={{
                 UserMessage,
                 EditComposer,
-                AssistantMessage
+                AssistantMessage,
               }}
             />
+
+            <InterruptUI />
 
             <ThreadPrimitive.If empty={false}>
               <div className="aui-thread-viewport-spacer min-h-8 grow" />
             </ThreadPrimitive.If>
-
             <Composer />
           </ThreadPrimitive.Viewport>
         </ThreadPrimitive.Root>
@@ -86,69 +83,71 @@ const ThreadScrollToBottom: FC = () => {
 
 const ThreadWelcome: FC = () => {
   return (
-    <div className="aui-thread-welcome-root mx-auto my-auto flex w-full max-w-[var(--thread-max-width)] flex-grow flex-col">
-      <div className="aui-thread-welcome-center flex w-full flex-grow flex-col items-center justify-center">
-        <div className="aui-thread-welcome-message flex size-full flex-col justify-center px-8">
-          <m.div
-            initial={{opacity: 0, y: 10}}
-            animate={{opacity: 1, y: 0}}
-            exit={{opacity: 0, y: 10}}
-            className="aui-thread-welcome-message-motion-1 text-2xl font-semibold"
-          >
-            Hello there!
-          </m.div>
-          <m.div
-            initial={{opacity: 0, y: 10}}
-            animate={{opacity: 1, y: 0}}
-            exit={{opacity: 0, y: 10}}
-            transition={{delay: 0.1}}
-            className="aui-thread-welcome-message-motion-2 text-2xl text-muted-foreground/65"
-          >
-            How can I help you today?
-          </m.div>
+    <ThreadPrimitive.Empty>
+      <div className="aui-thread-welcome-root mx-auto my-auto flex w-full max-w-[var(--thread-max-width)] flex-grow flex-col">
+        <div className="aui-thread-welcome-center flex w-full flex-grow flex-col items-center justify-center">
+          <div className="aui-thread-welcome-message flex size-full flex-col justify-center px-8">
+            <m.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              className="aui-thread-welcome-message-motion-1 text-2xl font-semibold"
+            >
+              Hello there!
+            </m.div>
+            <m.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ delay: 0.1 }}
+              className="aui-thread-welcome-message-motion-2 text-2xl text-muted-foreground/65"
+            >
+              How can I help you today?
+            </m.div>
+          </div>
         </div>
       </div>
-      <ThreadSuggestions />
-    </div>
+    </ThreadPrimitive.Empty>
   );
 };
 
-const ThreadSuggestions: FC = () => {
+const ThreadWelcomeSuggestions: FC = () => {
   return (
-    <div className="aui-thread-welcome-suggestions grid w-full gap-2 pb-4 @md:grid-cols-2">
+    <div className="aui-thread-welcome-suggestions grid w-full gap-2 @md:grid-cols-2">
       {[
         {
           title: "What's the weather",
           label: "in San Francisco?",
-          action: "What's the weather in San Francisco?"
+          action: "What's the weather in San Francisco?",
         },
         {
           title: "Explain React hooks",
           label: "like useState and useEffect",
-          action: "Explain React hooks like useState and useEffect"
+          action: "Explain React hooks like useState and useEffect",
         },
         {
           title: "Write a SQL query",
           label: "to find top customers",
-          action: "Write a SQL query to find top customers"
+          action: "Write a SQL query to find top customers",
         },
         {
           title: "Create a meal plan",
           label: "for healthy weight loss",
-          action: "Create a meal plan for healthy weight loss"
-        }
+          action: "Create a meal plan for healthy weight loss",
+        },
       ].map((suggestedAction, index) => (
         <m.div
-          initial={{opacity: 0, y: 20}}
-          animate={{opacity: 1, y: 0}}
-          exit={{opacity: 0, y: 20}}
-          transition={{delay: 0.05 * index}}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 20 }}
+          transition={{ delay: 0.05 * index }}
           key={`suggested-action-${suggestedAction.title}-${index}`}
           className="aui-thread-welcome-suggestion-display [&:nth-child(n+3)]:hidden @md:[&:nth-child(n+3)]:block"
         >
           <ThreadPrimitive.Suggestion
             prompt={suggestedAction.action}
-            send
+            method="replace"
+            autoSend
             asChild
           >
             <Button
@@ -174,6 +173,9 @@ const Composer: FC = () => {
   return (
     <div className="aui-composer-wrapper sticky bottom-0 mx-auto flex w-full max-w-[var(--thread-max-width)] flex-col gap-4 overflow-visible rounded-t-3xl bg-background pb-4 md:pb-6">
       <ThreadScrollToBottom />
+      <ThreadPrimitive.Empty>
+        <ThreadWelcomeSuggestions />
+      </ThreadPrimitive.Empty>
       <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col rounded-3xl border border-border bg-muted px-1 pt-2 shadow-[0_9px_9px_0px_rgba(0,0,0,0.01),0_2px_5px_0px_rgba(0,0,0,0.06)] dark:border-muted-foreground/15">
         <ComposerAttachments />
         <ComposerPrimitive.Input
@@ -238,18 +240,17 @@ const MessageError: FC = () => {
 };
 
 const AssistantMessage: FC = () => {
-  console.log("here assistant manager");
   return (
     <MessagePrimitive.Root asChild>
       <div
-        className="aui-assistant-message-root relative mx-auto w-full max-w-[var(--thread-max-width)] animate-in py-4 duration-150 ease-out fade-in slide-in-from-bottom-1 last:mb-24"
+        className="aui-assistant-message-root relative mx-auto w-full max-w-[var(--thread-max-width)] animate-in py-4 duration-200 fade-in slide-in-from-bottom-1 last:mb-24"
         data-role="assistant"
       >
         <div className="aui-assistant-message-content mx-2 leading-7 break-words text-foreground">
           <MessagePrimitive.Parts
             components={{
-              Text: UIDirector,
-              tools: {Fallback: ToolFallback}
+              Text: MarkdownText,
+              tools: { Fallback: ToolFallback },
             }}
           />
           <MessageError />
@@ -295,7 +296,7 @@ const UserMessage: FC = () => {
   return (
     <MessagePrimitive.Root asChild>
       <div
-        className="aui-user-message-root mx-auto grid w-full max-w-[var(--thread-max-width)] animate-in auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] gap-y-2 px-2 py-4 duration-150 ease-out fade-in slide-in-from-bottom-1 first:mt-3 last:mb-5 [&:where(>*)]:col-start-2"
+        className="aui-user-message-root mx-auto grid w-full max-w-[var(--thread-max-width)] animate-in auto-rows-auto grid-cols-[minmax(72px,1fr)_auto] gap-y-2 px-2 py-4 duration-200 fade-in slide-in-from-bottom-1 first:mt-3 last:mb-5 [&:where(>*)]:col-start-2"
         data-role="user"
       >
         <UserMessageAttachments />
@@ -366,7 +367,7 @@ const BranchPicker: FC<BranchPickerPrimitive.Root.Props> = ({
       hideWhenSingleBranch
       className={cn(
         "aui-branch-picker-root mr-2 -ml-2 inline-flex items-center text-xs text-muted-foreground",
-        className
+        className,
       )}
       {...rest}
     >

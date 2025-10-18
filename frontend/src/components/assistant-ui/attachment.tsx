@@ -18,7 +18,7 @@ import {
   useAssistantState
 } from "@assistant-ui/react";
 import {FileText, PlusIcon, XIcon} from "lucide-react";
-import {PropsWithChildren, useEffect, useState, type FC} from "react";
+import {useEffect, useState, type FC, type PropsWithChildren} from "react";
 import {useShallow} from "zustand/shallow";
 
 const useFileSrc = (file: File | undefined) => {

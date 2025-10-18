@@ -23,3 +23,6 @@ backend/src/data/*
 
 .langgraph_api/*
 .pytest_cache/*
+
+
+my-app/**

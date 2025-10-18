@@ -1,4 +1,7 @@
-import {useThread} from "@/contexts/ThreadContext";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
+import {RadioGroup, RadioGroupItem} from "@/components/ui/radio-group";
 import {useState} from "react";
 
 type QuestionType = {
@@ -22,11 +25,10 @@ export default function Questions({
   questions,
   onAnswersChange
 }: QuestionsProps) {
-  const {threadId} = useThread();
+  console.log("questions", questions);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  console.log(answers);
   const handleInputChange = (questionId: string, value: string) => {
     const newAnswers = {...answers, [questionId]: value};
     setAnswers(newAnswers);
@@ -35,22 +37,12 @@ export default function Questions({
 
   const handleSubmitAnswers = async () => {
     setIsSubmitting(true);
-
     try {
-      // Format answers as required by backend
       const formattedAnswers: Answer[] = questions.map((question) => ({
         question: question.question,
         answer: answers[question.id] || ""
       }));
-
-      // Submit answers through the utility - this will automatically trigger
-      // the chat adapter to process the submission
-      if (threadId) {
-        // submitAnswers(formattedAnswers, threadId);
-        console.log("Answers submitted for processing");
-      } else {
-        console.error("No thread ID available for answer submission");
-      }
+      console.log(formattedAnswers);
     } catch (error) {
       console.error("Error submitting answers:", error);
     } finally {
@@ -62,33 +54,28 @@ export default function Questions({
     switch (question.type) {
       case "input":
         return (
-          <input
-            type="text"
+          <Input
             placeholder="Type your answer..."
-            className="input input-bordered input-sm w-full max-w-xs"
             value={answers[question.id] || ""}
             onChange={(e) => handleInputChange(question.id, e.target.value)}
           />
         );
       case "radio":
         return (
-          <div className="space-y-2">
+          <RadioGroup
+            value={answers[question.id] || ""}
+            onValueChange={(value) => handleInputChange(question.id, value)}
+          >
             {question.options?.map((option) => (
-              <label key={option} className="label cursor-pointer">
-                <span className="label-text">{option}</span>
-                <input
-                  type="radio"
-                  name={question.id}
-                  className="radio radio-sm"
+              <div key={option} className="flex items-center space-x-2">
+                <RadioGroupItem
                   value={option}
-                  checked={answers[question.id] === option}
-                  onChange={(e) =>
-                    handleInputChange(question.id, e.target.value)
-                  }
+                  id={`${question.id}-${option}`}
                 />
-              </label>
+                <Label htmlFor={`${question.id}-${option}`}>{option}</Label>
+              </div>
             ))}
-          </div>
+          </RadioGroup>
         );
       default:
         return null;
@@ -97,23 +84,19 @@ export default function Questions({
 
   return (
     <div className="space-y-6">
-      {questions.map((question: QuestionType) => (
-        <div key={question.question} className="form-control w-full max-w-md">
-          <label className="label">
-            <span className="label-text font-medium">{question.question}</span>
-          </label>
-          render {renderQuestion(question)}
+      {questions.map((question, index) => (
+        <div key={index} className="space-y-2">
+          {index}
+          <Label className="font-medium">{question.question}</Label>
+          {renderQuestion(question)}
         </div>
       ))}
-      <div className="form-control w-full max-w-md">
-        <button
-          onClick={handleSubmitAnswers}
-          disabled={isSubmitting || Object.keys(answers).length === 0}
-          className="btn btn-primary"
-        >
-          {isSubmitting ? "Submitting..." : "Submit Answers"}
-        </button>
-      </div>
+      <Button
+        onClick={handleSubmitAnswers}
+        disabled={isSubmitting || Object.keys(answers).length === 0}
+      >
+        {isSubmitting ? "Submitting..." : "Submit Answers"}
+      </Button>
     </div>
   );
 }
