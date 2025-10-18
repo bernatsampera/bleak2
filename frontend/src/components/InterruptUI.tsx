@@ -2,9 +2,9 @@ import {
   useLangGraphInterruptState,
   useLangGraphSendCommand
 } from "@assistant-ui/react-langgraph";
+import {useState} from "react";
 import Questions from "./Questions";
 import {Button} from "./ui/button";
-import {useState} from "react";
 
 interface Answer {
   question: string;
@@ -25,10 +25,12 @@ export const InterruptUI = () => {
    */
   /*******  b4458e7f-2f34-489a-82e2-dcdf6c1ce985  *******/ const respondYes =
     () => {
-      const formattedAnswers: Answer[] = interrupt.value.questions.map((question: any) => ({
-        question: question.question,
-        answer: answers[question.id] || ""
-      }));
+      const formattedAnswers: Answer[] = interrupt.value.questions.map(
+        (question: any) => ({
+          question: question.question,
+          answer: answers[question.id] || ""
+        })
+      );
       sendCommand({resume: JSON.stringify(formattedAnswers)});
     };
   const respondNo = () => {
@@ -42,14 +44,19 @@ export const InterruptUI = () => {
   };
 
   return (
-    <div className="flex flex-col gap-2">
-      <div>Interrupt: </div>
-      <div>
-        <Questions questions={questions} onAnswersChange={handleAnswersChange} />
-      </div>
-      <div className="flex items-end gap-2">
-        <Button onClick={respondYes}>Submit</Button>
-        {/* <Button onClick={respondNo}>Reject</Button> */}
+    <div className="aui-assistant-message-root relative mx-auto w-full max-w-[var(--thread-max-width)] animate-in py-4 duration-200 fade-in slide-in-from-bottom-1 last:mb-24">
+      <div className="flex flex-col gap-2">
+        <div>Interrupt: </div>
+        <div>
+          <Questions
+            questions={questions}
+            onAnswersChange={handleAnswersChange}
+          />
+        </div>
+        <div className="flex items-end gap-2">
+          <Button onClick={respondYes}>Submit</Button>
+          {/* <Button onClick={respondNo}>Reject</Button> */}
+        </div>
       </div>
     </div>
   );

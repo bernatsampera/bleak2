@@ -107,15 +107,11 @@ async def generate_questions(
             update={"questions": []},
         )
 
-    answers = interrupt({"questions": response.questions})
-
-    print("answers", answers)
     # Use interrupt to wait for human input - send all questions at once
     return Command(
         goto="ask_user_input",
         update={
             "questions": response.questions,
-            "answers": answers,
         },
     )
 
@@ -125,12 +121,7 @@ async def ask_user_input(state: State) -> Command[Literal["__end__"]]:
     messages = state.get("messages", [])
     answers = state.get("answers", {})
 
-    # Format the answers for the prompt
-    formatted_answers = []
-    for question in questions:
-        question_id = question.id
-        answer_text = answers.get(question_id, "") if isinstance(answers, dict) else ""
-        formatted_answers.append({"question": question.question, "answer": answer_text})
+    answers = interrupt({"questions": questions})
 
     prompt = f"""
         Provide a complete answer to the user based on the original question and the user's answers.
@@ -139,7 +130,7 @@ async def ask_user_input(state: State) -> Command[Literal["__end__"]]:
         {messages}
 
         User Answers to Clarifying Questions:
-        {formatted_answers}
+        {answers}
 
         Return just a brief answer, no more questions.
     """
@@ -164,4 +155,5 @@ graph_builder.add_edge(START, "generate_questions")
 
 checkpointer = MemorySaver()
 # graph = graph_builder.compile(checkpointer=checkpointer)  ## use without langgraph stdio
+
 graph = graph_builder.compile()
