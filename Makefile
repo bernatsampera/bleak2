@@ -1,49 +1,13 @@
-# ===============================
-# Project Makefile
-# ===============================
-
-PYTHON_VERSION = 3.12
-FRONTEND_PORT = 5173
-VENV = .venv/bin/activate
-LGSTUDIO_CMD = uvx --refresh --from "langgraph-cli[inmem]" --with-editable . --python $(PYTHON_VERSION) langgraph dev --allow-blocking
-FRONTEND_CMD = cd frontend && npm run dev
-
-
-# ===============================
-# Development
-# ===============================
-
-## Start LangGraph Studio and frontend
+# Start LangGraph Studio and frontend
 dev:
-	@echo "Starting LangGraph Studio and frontend (http://localhost:$(FRONTEND_PORT))..."
-	make run-both
+	@echo "Starting LangGraph Studio and frontend[](http://localhost:5173)..."
+	@source .venv/bin/activate && uvx --refresh --from "langgraph-cli[inmem]" --with-editable . --python 3.12 langgraph dev --allow-blocking & cd frontend && npm run dev & wait
 
-
-## Start frontend only
+# Start frontend only
 frontend:
-	@echo "Starting frontend on http://localhost:$(FRONTEND_PORT)"
-	@$(FRONTEND_CMD)
+	@echo "Starting frontend on http://localhost:5173"
+	@cd frontend && npm run dev
 
-## Run LangGraph Studio and frontend together
-run-both:
-	@trap 'kill %1 %2 2>/dev/null || true' EXIT; \
-	(source $(VENV) && $(LGSTUDIO_CMD) &) && \
-	($(FRONTEND_CMD) &) && \
-	wait
-
-
-# ===============================
-# Testing & Tools
-# ===============================
-
-## Run tests
+# Run tests
 test:
 	@uv run pytest -v -s
-
-
-
-
-## Show available commands
-help:
-	@echo "Available commands:"
-	@grep -E '^##' Makefile | sed -e 's/## //'
