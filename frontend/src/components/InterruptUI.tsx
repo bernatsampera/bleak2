@@ -4,16 +4,19 @@ import {
 } from "@assistant-ui/react-langgraph";
 import Questions from "./Questions";
 import {Button} from "./ui/button";
+import {useState} from "react";
+
+interface Answer {
+  question: string;
+  answer: string;
+}
 
 export const InterruptUI = () => {
   const interrupt = useLangGraphInterruptState();
   const sendCommand = useLangGraphSendCommand();
-  if (!interrupt) return null;
+  const [answers, setAnswers] = useState<Record<string, string>>({});
 
-  const answers = {
-    question: "question",
-    answer: "answer"
-  };
+  if (!interrupt) return null;
 
   /*************  ✨ Windsurf Command ⭐  *************/
   /**
@@ -22,7 +25,11 @@ export const InterruptUI = () => {
    */
   /*******  b4458e7f-2f34-489a-82e2-dcdf6c1ce985  *******/ const respondYes =
     () => {
-      sendCommand({resume: JSON.stringify(answers)});
+      const formattedAnswers: Answer[] = interrupt.value.questions.map((question: any) => ({
+        question: question.question,
+        answer: answers[question.id] || ""
+      }));
+      sendCommand({resume: JSON.stringify(formattedAnswers)});
     };
   const respondNo = () => {
     sendCommand({resume: "no"});
@@ -30,11 +37,15 @@ export const InterruptUI = () => {
 
   const questions = interrupt.value.questions;
 
+  const handleAnswersChange = (newAnswers: Record<string, string>) => {
+    setAnswers(newAnswers);
+  };
+
   return (
     <div className="flex flex-col gap-2">
       <div>Interrupt: </div>
       <div>
-        <Questions questions={questions} />
+        <Questions questions={questions} onAnswersChange={handleAnswersChange} />
       </div>
       <div className="flex items-end gap-2">
         <Button onClick={respondYes}>Submit</Button>
