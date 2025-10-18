@@ -1,8 +1,6 @@
-import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {RadioGroup, RadioGroupItem} from "@/components/ui/radio-group";
-import {useState} from "react";
 
 type QuestionType = {
   question: string;
@@ -11,43 +9,20 @@ type QuestionType = {
   id: string;
 };
 
-interface Answer {
-  question: string;
-  answer: string;
-}
-
 interface QuestionsProps {
   questions: QuestionType[];
   onAnswersChange?: (answers: Record<string, string>) => void;
+  answers: Record<string, string>;
 }
 
 export default function Questions({
   questions,
-  onAnswersChange
+  onAnswersChange,
+  answers
 }: QuestionsProps) {
-  console.log("questions", questions);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const handleInputChange = (questionId: string, value: string) => {
     const newAnswers = {...answers, [questionId]: value};
-    setAnswers(newAnswers);
     onAnswersChange?.(newAnswers);
-  };
-
-  const handleSubmitAnswers = async () => {
-    setIsSubmitting(true);
-    try {
-      const formattedAnswers: Answer[] = questions.map((question) => ({
-        question: question.question,
-        answer: answers[question.id] || ""
-      }));
-      console.log(formattedAnswers);
-    } catch (error) {
-      console.error("Error submitting answers:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const renderQuestion = (question: QuestionType) => {
@@ -91,12 +66,6 @@ export default function Questions({
           {renderQuestion(question)}
         </div>
       ))}
-      <Button
-        onClick={handleSubmitAnswers}
-        disabled={isSubmitting || Object.keys(answers).length === 0}
-      >
-        {isSubmitting ? "Submitting..." : "Submit Answers"}
-      </Button>
     </div>
   );
 }

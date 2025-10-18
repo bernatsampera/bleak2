@@ -51,10 +51,13 @@ export const InterruptUI = () => {
           <Questions
             questions={questions}
             onAnswersChange={handleAnswersChange}
+            answers={answers}
           />
         </div>
-        <div className="flex items-end gap-2">
-          <Button onClick={respondYes}>Submit</Button>
+        <div className="flex justify-center gap-2 w-full">
+          <Button onClick={respondYes} className="w-1/2">
+            Submit
+          </Button>
           {/* <Button onClick={respondNo}>Reject</Button> */}
         </div>
       </div>
